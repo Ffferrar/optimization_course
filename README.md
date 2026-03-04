@@ -1,1 +1,17 @@
-# optimization_course
+
+Выбрал 2 алгоритма:
+
+1. **DP** — динамика по весу, берётся при W < 200000.
+2. **Branch and Bound** — ветвление, отсечение по upper bound от дробного рюкзака при W >= 200000
+
+## Запуск
+
+```bash
+./run.sh data/ks_30_0
+```
+
+Прогнать все тесты из папки:
+
+```bash
+for f in data/ks_30_0 data/ks_50_0 data/ks_200_0 data/ks_400_0 data/ks_1000_0 data/ks_10000_0; do echo "=== $f ==="; python3 solution.py < "$f"; done
+```
