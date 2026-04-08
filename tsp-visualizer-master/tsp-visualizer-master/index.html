@@ -1,0 +1,96 @@
+<html>
+<head>
+<title>Traveling Salesman Problem Visualizer</title>
+<style type="text/css">
+  #container {
+    max-width: 50%;
+    height: 100%;
+    margin-left: auto;
+    border-left: 1px solid #666;
+  }
+  #data {
+  	float: left;
+  	width: 50%;
+  }
+  textarea {
+  	height: 40%;
+  	width: 95%;
+  }
+  .section {
+  	width: 100%;
+  }
+</style>
+</head>
+<body>
+<div id="data">
+<div class="section">
+<h3>Problems</h3>
+<ul>
+<li><a href="#" onclick="loadNodes('tsp_51_1')">Problem 1</a></li>
+<li><a href="#" onclick="loadNodes('tsp_100_3')">Problem 2</a></li>
+<li><a href="#" onclick="loadNodes('tsp_200_2')">Problem 3</a></li>
+<li><a href="#" onclick="loadNodes('tsp_574_1')">Problem 4</a></li>
+<li><a href="#" onclick="loadNodes('tsp_1889_1')">Problem 5</a></li>
+<li><a href="#" onclick="loadNodes('tsp_33810_1')">Problem 6</a></li>
+</ul>
+</div>
+<div class="section">
+<h3>Path</h3>
+<p>Paste your node list here to see the path through the nodes.</p>
+<textarea id="path"></textarea>
+</div>
+<label>Distance: </label><span id="distance"></span>
+</div>
+<div id="container"></div>
+<script src="sigma/sigma.min.js"></script>
+<script src="sigma/plugins/sigma.parsers.json.min.js"></script>
+<script src="sigma.parsers.tsp.js"></script>
+<script>
+	sigma.classes.graph.addMethod('edgeLength', function(e) {
+		  var sourceNode = this.nodesIndex[e.source];
+		  var targetNode = this.nodesIndex[e.target];
+		  return Math.sqrt(Math.pow(sourceNode.x - targetNode.x, 2) + Math.pow(sourceNode.y - targetNode.y, 2))
+	});
+
+  sigma.classes.graph.addMethod('cycleLength', function() {
+	  var dist = 0;
+	  this.edges().forEach(function(edge, index) {
+		 dist += this.edgeLength(edge); 
+	  }, this);
+	  return dist;
+  });
+  
+  function updatePath() {
+	 sigma.parsers.tsp.edges(ePath.value, s);
+	 s.refresh();
+	 document.getElementById("distance").textContent = s.graph.cycleLength();
+  }
+  
+  function loadNodes(nodeFile) {
+	  sigma.parsers.tsp.fileNodes(nodeFile, s, function() {
+		  var chain = "";
+		  s.graph.nodes().forEach(function(node) {
+			  chain += node.id.substring(1)+" ";
+		  });
+		  ePath.value = chain.trim();
+		  updatePath();
+	  });
+  }
+  
+  var s = new sigma('container');
+  s.settings({
+				 minNodeSize: 0,
+				 maxNodeSize: 1,
+				 defaultNodeColor: '#0000FF',
+				 defaultEdgeColor: '#DFDFDF',
+				 edgeColor: 'default'
+			 });
+  
+  var ePath = document.getElementById("path");
+  ePath.addEventListener("keyup", updatePath);
+
+  loadNodes('tsp_51_1');
+  
+</script>
+</body>
+</html>
