@@ -1,6 +1,7 @@
 import sys
+import time
 from parser import parse_file
-from heuristics import greedy_desc, greedy_asc, dsatur
+from heuristics import solve as heuristic_solve
 
 def validate(edges, color):
     for u, v in edges:
@@ -12,14 +13,13 @@ def num_colors(color):
     return max(color) + 1 if color else 0
 
 def solve(path):
+    t0 = time.time()
     n, m, adj, edges = parse_file(path)
-    best = None
-    for fn in [greedy_desc, greedy_asc, dsatur]:
-        c = fn(n, adj)
-        if validate(edges, c):
-            if best is None or num_colors(c) < num_colors(best):
-                best = c
+    tl = int(sys.argv[2]) if len(sys.argv) > 2 else 280
+    best = heuristic_solve(n, adj, time_limit=tl)
     k = num_colors(best)
+    elapsed = time.time() - t0
+    print(f"{k} colors, valid={validate(edges, best)}, time={elapsed:.2f}s", file=sys.stderr)
     print(k)
     print(best)
 

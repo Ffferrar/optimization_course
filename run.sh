@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 set -e
-python3 src/main.py "$1"
+python3 src/main.py "$1" "${2:-280}"

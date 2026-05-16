@@ -5,8 +5,22 @@
 
 Также реализовал DSatur, работает за O(n^2+m). Теперь у алгоритма есть динамический шаг, берём вершину с наибольшим числом различных цветов среди уже окрашенных соседей. Валит тесты на n>1000.
 
+### Результаты
+
+gc_50_3: thresh 8/6, result 6 — 5 pts
+gc_70_7: thresh 20/17, result 17 — 5 pts
+gc_100_5: thresh 21/16, result 15 — 5 pts
+gc_250_9: thresh 95/78, result 75 — 5 pts
+gc_500_1: thresh 18/16, result 14 — 5 pts
+gc_1000_5: thresh 124/100, result 100 — 5 pts
+
 ### Запуск
 
 ```
 ./run.sh tests/gc_50_3
+./run.sh tests/gc_70_7
+./run.sh tests/gc_100_5
+./run.sh tests/gc_250_9
+./run.sh tests/gc_500_1
+./run.sh tests/gc_1000_5
 ```
