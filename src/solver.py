@@ -10,41 +10,72 @@ MAX_STARTS = 8
 LARGE_N = 5000
 BRIDGE_MIN_N = 200
 
-T0_SMALL = 0.05
-T0_MED = 0.02
-T0_LARGE = 0.01
-ALPHA = 0.95
-ALPHA_LARGE = 0.99
+T0_SMALL = 0.005
+T0_MED = 0.003
+T0_LARGE = 0.002
+ALPHA = 0.999995
+ALPHA_LARGE = 0.999999
 
 REHEAT_FACTOR = 200
 REHEAT_MIN = 500000
-REHEAT_TEMP_FRAC = 0.2
+REHEAT_TEMP_FRAC = 0.3
 
 TIME_CHECK_INTERVAL = 5000
 MIN_TEMP = 1e-12
 
 
+def _nn_tour(n, dist, start):
+    visited = [False] * n
+    tour = [start]
+    visited[start] = True
+    for _ in range(n - 1):
+        cur = tour[-1]
+        best_d = float('inf')
+        best_c = -1
+        for c in range(n):
+            if not visited[c]:
+                dd = dist(cur, c)
+                if dd < best_d:
+                    best_d = dd
+                    best_c = c
+        tour.append(best_c)
+        visited[best_c] = True
+    return tour
+
+
 def solve(n, coords, seed, time_limit):
     random.seed(seed)
     deadline = time.time() + time_limit
+    if n <= LARGE_N:
+        dm = [[0.0] * n for _ in range(n)]
+        for i in range(n):
+            xi, yi = coords[i]
+            for j in range(i + 1, n):
+                xj, yj = coords[j]
+                v = math.sqrt((xi - xj) ** 2 + (yi - yj) ** 2)
+                dm[i][j] = v
+                dm[j][i] = v
 
-    def d(a, b):
-        dx = coords[a][0] - coords[b][0]
-        dy = coords[a][1] - coords[b][1]
-        return math.sqrt(dx * dx + dy * dy)
+        def d(a, b):
+            return dm[a][b]
+    else:
+        def d(a, b):
+            dx = coords[a][0] - coords[b][0]
+            dy = coords[a][1] - coords[b][1]
+            return math.sqrt(dx * dx + dy * dy)
 
     def length(t):
         s = 0.0
         for i in range(n):
             s += d(t[i], t[(i + 1) % n])
         return s
-
     num_starts = min(MAX_STARTS, max(1, int(time_limit / 2)))
     best_tour = None
     best_cost = float('inf')
-    for _ in range(num_starts):
-        t = list(range(n))
-        random.shuffle(t)
+    nn_starts = min(num_starts, n)
+    start_cities = random.sample(range(n), nn_starts)
+    for sc in start_cities:
+        t = _nn_tour(n, d, sc)
         c = length(t)
         if c < best_cost:
             best_cost = c
