@@ -9,6 +9,7 @@ from parser import parse_file
 MAX_STARTS = 8
 LARGE_N = 5000
 BRIDGE_MIN_N = 200
+MAX_SEG = 500
 
 T0_SMALL = 0.005
 T0_MED = 0.003
@@ -43,6 +44,24 @@ def _nn_tour(n, dist, start):
     return tour
 
 
+def _two_opt_pass(tour, n, d, deadline):
+    improved = True
+    while improved:
+        improved = False
+        for i in range(n - 1):
+            if time.time() >= deadline:
+                return
+            for j in range(i + 2, n):
+                if i == 0 and j == n - 1:
+                    continue
+                a, b = tour[i], tour[i + 1]
+                c, e = tour[j], tour[(j + 1) % n]
+                delta = (d(a, c) + d(b, e)) - (d(a, b) + d(c, e))
+                if delta < -1e-10:
+                    tour[i + 1:j + 1] = tour[i + 1:j + 1][::-1]
+                    improved = True
+
+
 def solve(n, coords, seed, time_limit):
     random.seed(seed)
     deadline = time.time() + time_limit
@@ -75,11 +94,18 @@ def solve(n, coords, seed, time_limit):
     nn_starts = min(num_starts, n)
     start_cities = random.sample(range(n), nn_starts)
     for sc in start_cities:
+        if time.time() >= deadline:
+            break
         t = _nn_tour(n, d, sc)
         c = length(t)
         if c < best_cost:
             best_cost = c
             best_tour = t[:]
+
+    opt_deadline = time.time() + time_limit / 3
+    if n <= 2000 and time.time() < deadline:
+        _two_opt_pass(best_tour, n, d, min(opt_deadline, deadline))
+        best_cost = length(best_tour)
 
     tour = best_tour[:]
     cost = best_cost
@@ -102,28 +128,60 @@ def solve(n, coords, seed, time_limit):
             if time.time() >= deadline:
                 break
 
-        i = random.randint(0, n - 1)
-        j = random.randint(0, n - 1)
-        if i == j:
-            step += 1
-            continue
-        if i > j:
-            i, j = j, i
-        if j - i == 1 or (i == 0 and j == n - 1):
-            step += 1
-            continue
+        if n <= 150 and random.random() < 0.3:
+            i = random.randint(0, n - 1)
+            j = random.randint(0, n - 2)
+            if j >= i:
+                j += 1
+            pi = (i - 1) % n
+            ni = (i + 1) % n
+            city = tour[i]
+            prev_c = tour[pi]
+            next_c = tour[ni]
+            jn = (j + 1) % n
+            after_c = tour[j]
+            after_next = tour[jn]
 
-        a, b = tour[i], tour[(i - 1) % n]
-        c, e = tour[j], tour[(j + 1) % n]
-        delta = (d(b, c) + d(a, e)) - (d(b, a) + d(c, e))
+            old = d(prev_c, city) + d(city, next_c) + d(after_c, after_next)
+            new = d(prev_c, next_c) + d(after_c, city) + d(city, after_next)
+            delta = new - old
 
-        if delta < 0:
-            tour[i:j + 1] = tour[i:j + 1][::-1]
-            cost += delta
-        elif temp > MIN_TEMP:
-            if random.random() < math.exp(-delta / temp):
+            if delta < 0 or (temp > MIN_TEMP and random.random() < math.exp(-delta / temp)):
+                tour.pop(i)
+                ins = j if j < i else j - 1
+                tour.insert(ins + 1, city)
+                cost += delta
+        else:
+            if n > MAX_SEG:
+                i = random.randint(0, n - 1)
+                j = i + random.randint(2, MAX_SEG)
+                if j >= n:
+                    j -= n
+                if i > j:
+                    i, j = j, i
+            else:
+                i = random.randint(0, n - 1)
+                j = random.randint(0, n - 1)
+                if i == j:
+                    step += 1
+                    continue
+                if i > j:
+                    i, j = j, i
+            if j - i <= 1 or (i == 0 and j == n - 1):
+                step += 1
+                continue
+
+            a, b = tour[i], tour[(i - 1) % n]
+            c, e = tour[j], tour[(j + 1) % n]
+            delta = (d(b, c) + d(a, e)) - (d(b, a) + d(c, e))
+
+            if delta < 0:
                 tour[i:j + 1] = tour[i:j + 1][::-1]
                 cost += delta
+            elif temp > MIN_TEMP:
+                if random.random() < math.exp(-delta / temp):
+                    tour[i:j + 1] = tour[i:j + 1][::-1]
+                    cost += delta
 
         if cost < best_cost:
             best_cost = cost
